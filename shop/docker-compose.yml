@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shoppass
+      POSTGRES_DB: shop_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://shop:shoppass@db:5432/shop_db
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_CHAT_ID: "455255915"
+      PRICE_MARKUP: "30"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+
+  bot:
+    build: ./telegram-bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_CHAT_ID: "455255915"
+      NEXT_PUBLIC_API_URL: http://backend:8000
+      DATABASE_URL: postgresql+asyncpg://shop:shoppass@db:5432/shop_db
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        - condition: service_started
+    restart: unless-stopped
+
+  sync:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://shop:shoppass@db:5432/shop_db
+      PRICE_MARKUP: "30"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python /app/../scripts/import_xml.py
+    profiles:
+      - sync
+
+volumes:
+  pgdata:
