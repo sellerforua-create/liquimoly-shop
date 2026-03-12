@@ -32,35 +32,34 @@ async def trigger_import():
         price_el = offer.find("price")
         if name_el is None or price_el is None:
             continue
-        name = (name_el.text or "").replace("'", "''")
+        name = (name_el.text or "")
         try:
             supplier_price = float(price_el.text or 0)
         except:
             continue
         price = round(supplier_price * (1 + PRICE_MARKUP), 2)
         desc_el = offer.find("description")
-        description = (desc_el.text or "").replace("'", "''") if desc_el is not None else ""
+        description = (desc_el.text or "") if desc_el is not None else ""
         cat_el = offer.find("categoryId")
-        category = (cat_el.text or "").replace("'", "''") if cat_el is not None else ""
+        category = (cat_el.text or "") if cat_el is not None else ""
         vendor_el = offer.find("vendor")
-        vendor = (vendor_el.text or "").replace("'", "''") if vendor_el is not None else ""
+        vendor = (vendor_el.text or "") if vendor_el is not None else ""
         pic_el = offer.find("picture")
-        image_url = (pic_el.text or "").replace("'", "''") if pic_el is not None else ""
-        avail = "true" if offer.get("available", "true") == "true" else "false"
-        rows.append((ext_id, name, description, price, supplier_price, category, vendor, image_url, avail))
+        image_url = (pic_el.text or "") if pic_el is not None else ""
+        avail = offer.get("available", "true") == "true"
+        rows.append((ext_id, name, description, price, category, vendor, image_url, avail))
 
     async with engine.begin() as conn:
-        for (ext_id, name, description, price, supplier_price, category, vendor, image_url, avail) in rows:
+        # Clear and re-insert
+        await conn.execute(text("DELETE FROM products"))
+        for (ext_id, name, description, price, category, vendor, image_url, avail) in rows:
             await conn.execute(text("""
                 INSERT INTO products (external_id, name, description, price, category_name, vendor, image_url, available, xml_feed_id)
                 VALUES (:ext_id, :name, :desc, :price, :cat, :vendor, :img, :avail, 3411)
-                ON CONFLICT (external_id) DO UPDATE SET
-                    price = EXCLUDED.price,
-                    available = EXCLUDED.available
             """), {
                 "ext_id": ext_id, "name": name, "desc": description,
                 "price": price, "cat": category,
-                "vendor": vendor, "img": image_url, "avail": avail == "true"
+                "vendor": vendor, "img": image_url, "avail": avail
             })
 
     return {"imported": len(rows)}
