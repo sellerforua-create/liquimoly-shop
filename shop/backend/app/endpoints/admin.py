@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from app.core.database import get_db, AsyncSessionLocal
+from sqlalchemy import select, func, text
+from app.core.database import get_db, engine
 from app.models.product import Product
 import httpx
 import xml.etree.ElementTree as ET
@@ -16,62 +16,55 @@ FEED_URL = "https://api.dropshipping.ua/api/feeds/3411.xml"
 async def trigger_import():
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.get(FEED_URL)
-        root = ET.fromstring(resp.text)
-        shop = root.find("shop")
-        if shop is None:
-            return {"error": "no shop element"}
-        offers = shop.find("offers")
-        if offers is None:
-            return {"error": "no offers element"}
 
-        total = 0
-        async with AsyncSessionLocal() as db:
-            for offer in offers.findall("offer"):
-                ext_id = offer.get("id")
-                name_el = offer.find("name")
-                price_el = offer.find("price")
-                if name_el is None or price_el is None:
-                    continue
-                name = name_el.text or ""
-                try:
-                    supplier_price = float(price_el.text or 0)
-                except:
-                    continue
-                price = round(supplier_price * (1 + PRICE_MARKUP), 2)
-                desc_el = offer.find("description")
-                description = desc_el.text if desc_el is not None else None
-                cat_el = offer.find("categoryId")
-                category = cat_el.text if cat_el is not None else None
-                vendor_el = offer.find("vendor")
-                vendor = vendor_el.text if vendor_el is not None else None
-                pic_el = offer.find("picture")
-                image_url = pic_el.text if pic_el is not None else None
-                avail = offer.get("available", "true") == "true"
+    root = ET.fromstring(resp.text)
+    shop = root.find("shop")
+    if shop is None:
+        return {"error": "no shop element"}
+    offers = shop.find("offers")
+    if offers is None:
+        return {"error": "no offers element"}
 
-                result = await db.execute(select(Product).where(Product.external_id == ext_id))
-                existing = result.scalar_one_or_none()
-                if existing:
-                    existing.price = price
-                    existing.supplier_price = supplier_price
-                    existing.available = avail
-                else:
-                    db.add(Product(
-                        external_id=ext_id,
-                        name=name,
-                        description=description,
-                        price=price,
-                        supplier_price=supplier_price,
-                        old_price=None,
-                        category_name=category,
-                        vendor=vendor,
-                        image_url=image_url,
-                        available=avail,
-                        xml_feed_id=3411,
-                    ))
-                total += 1
-            await db.commit()
+    rows = []
+    for offer in offers.findall("offer"):
+        ext_id = offer.get("id")
+        name_el = offer.find("name")
+        price_el = offer.find("price")
+        if name_el is None or price_el is None:
+            continue
+        name = (name_el.text or "").replace("'", "''")
+        try:
+            supplier_price = float(price_el.text or 0)
+        except:
+            continue
+        price = round(supplier_price * (1 + PRICE_MARKUP), 2)
+        desc_el = offer.find("description")
+        description = (desc_el.text or "").replace("'", "''") if desc_el is not None else ""
+        cat_el = offer.find("categoryId")
+        category = (cat_el.text or "").replace("'", "''") if cat_el is not None else ""
+        vendor_el = offer.find("vendor")
+        vendor = (vendor_el.text or "").replace("'", "''") if vendor_el is not None else ""
+        pic_el = offer.find("picture")
+        image_url = (pic_el.text or "").replace("'", "''") if pic_el is not None else ""
+        avail = "true" if offer.get("available", "true") == "true" else "false"
+        rows.append((ext_id, name, description, price, supplier_price, category, vendor, image_url, avail))
 
-    return {"imported": total}
+    async with engine.begin() as conn:
+        for (ext_id, name, description, price, supplier_price, category, vendor, image_url, avail) in rows:
+            await conn.execute(text("""
+                INSERT INTO products (external_id, name, description, price, supplier_price, category_name, vendor, image_url, available, xml_feed_id)
+                VALUES (:ext_id, :name, :desc, :price, :sprice, :cat, :vendor, :img, :avail, 3411)
+                ON CONFLICT (external_id) DO UPDATE SET
+                    price = EXCLUDED.price,
+                    supplier_price = EXCLUDED.supplier_price,
+                    available = EXCLUDED.available
+            """), {
+                "ext_id": ext_id, "name": name, "desc": description,
+                "price": price, "sprice": supplier_price, "cat": category,
+                "vendor": vendor, "img": image_url, "avail": avail == "true"
+            })
+
+    return {"imported": len(rows)}
 
 @router.get("/stats")
 async def stats(db: AsyncSession = Depends(get_db)):
