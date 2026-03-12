@@ -30,3 +30,7 @@ app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
