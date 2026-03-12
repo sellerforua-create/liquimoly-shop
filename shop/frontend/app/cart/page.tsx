@@ -1,5 +1,5 @@
 "use client";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "../../context/CartContext";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

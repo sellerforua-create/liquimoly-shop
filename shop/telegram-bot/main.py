@@ -26,12 +26,15 @@ class OrderState(StatesGroup):
 def main_menu():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text="🛍 Каталог"), KeyboardButton(text="🔍 Пошук")],
-        [KeyboardButton(text="🛒 Кошик"), KeyboardButton(text="📞 Контакти")],
+        [KeyboardButton(text="🛒 Кошик"), KeyboardButton(text="❤️ Обране")],
+        [KeyboardButton(text="📞 Контакти"), KeyboardButton(text="ℹ️ Допомога")],
     ], resize_keyboard=True)
 
 
 @dp.message(Command("start"))
 async def cmd_start(msg: types.Message):
+    from handlers.info import register_user
+    register_user(msg.from_user.id)
     await msg.answer(
         f"👋 Привіт, {msg.from_user.first_name}!\n\n"
         "🛢️ Ласкаво просимо до магазину автохімії *Liqui Moly*!\n\n"
@@ -94,7 +97,8 @@ async def show_products_page(msg, category: str, page: int = 0):
         avail = "✅ В наявності" if p.get("available") else "❌ Немає"
         caption = f"*{p['name']}*\n💰 {p['price']} ₴\n{avail}"
         buttons = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🛒 До кошика", callback_data=f"add:{p['id']}")
+            InlineKeyboardButton(text="🛒 До кошика", callback_data=f"add:{p['id']}"),
+            InlineKeyboardButton(text="❤️", callback_data=f"fav:{p['id']}"),
         ]])
         if p.get("image_url"):
             try:
@@ -264,10 +268,20 @@ async def handle_text_search(msg: types.Message, state: FSMContext):
     await do_search(msg, msg.text, page=0)
 
 
+@dp.message(F.text == "ℹ️ Допомога")
+async def help_btn(msg: types.Message):
+    from handlers.info import cmd_help
+    await cmd_help(msg)
+
+
 async def main():
     from handlers import cart as cart_handler, order as order_handler
+    from handlers import favorites as fav_handler, info as info_handler, admin as admin_handler
     dp.include_router(cart_handler.router)
     dp.include_router(order_handler.router)
+    dp.include_router(fav_handler.router)
+    dp.include_router(info_handler.router)
+    dp.include_router(admin_handler.router)
     print(f"[bot] @Liquimolli_bot запущений ✅")
     await dp.start_polling(bot)
 
