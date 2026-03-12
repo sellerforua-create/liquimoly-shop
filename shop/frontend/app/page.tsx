@@ -1,65 +1,84 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const features = [
+  { icon: "🇩🇪", title: "Оригінальний Liqui Moly", desc: "Сертифікована продукція з Німеччини" },
+  { icon: "✅", title: "Гарантія якості", desc: "Офіційна гарантія виробника" },
+  { icon: "🚚", title: "Доставка 1-2 дні", desc: "Nova Poshta по всій Україні" },
+  { icon: "💳", title: "Накладений платіж", desc: "Оплата при отриманні" },
+  { icon: "🔄", title: "Повернення 14 днів", desc: "Без зайвих питань" },
+  { icon: "💬", title: "Підтримка 24/7", desc: "Telegram бот завжди на зв'язку" },
+];
+
+const partners = [
+  { name: "Liqui Moly", sub: "Офіційний партнер" },
+  { name: "Nova Poshta", sub: "Доставка" },
+  { name: "ПриватБанк", sub: "Оплата" },
+  { name: "Monobank", sub: "Оплата" },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Hero */}
+      <section className="max-w-5xl mx-auto px-4 py-16 text-center">
+        <div className="text-6xl mb-4">🛢️</div>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          Автохімія <span className="text-blue-400">Liqui Moly</span>
+        </h1>
+        <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
+          Оригінальна продукція з Німеччини. 485 товарів. Доставка Nova Poshta по всій Україні.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/catalog"
+            className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-xl text-lg transition">
+            🛍 Перейти в каталог
+          </Link>
+          <Link href="/car-selector"
+            className="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition">
+            🚗 Підібрати масло для авто
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
+      </section>
+
+      {/* Переваги */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold text-center mb-8">Чому нас обирають</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {features.map(f => (
+            <div key={f.title} className="bg-gray-800 rounded-xl p-5 text-center">
+              <div className="text-3xl mb-2">{f.icon}</div>
+              <h3 className="font-semibold text-white text-sm mb-1">{f.title}</h3>
+              <p className="text-gray-400 text-xs">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Telegram CTA */}
+      <section className="max-w-5xl mx-auto px-4 py-8">
+        <div className="bg-blue-900 border border-blue-700 rounded-2xl p-8 text-center">
+          <div className="text-4xl mb-3">✈️</div>
+          <h2 className="text-2xl font-bold mb-2">Замовляйте в Telegram</h2>
+          <p className="text-gray-300 mb-5">Зручніше, швидше, без зайвих кроків. Бот @Liquimolli_bot</p>
+          <a href="https://t.me/Liquimolli_bot" target="_blank"
+            className="inline-block bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 py-3 rounded-xl transition">
+            Відкрити бот
           </a>
         </div>
-      </main>
+      </section>
+
+      {/* Партнери */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <h2 className="text-lg text-gray-500 text-center mb-6 uppercase tracking-widest text-xs">Наші партнери</h2>
+        <div className="flex flex-wrap justify-center gap-6">
+          {partners.map(p => (
+            <div key={p.name} className="bg-gray-800 rounded-xl px-6 py-4 text-center min-w-[120px]">
+              <p className="font-bold text-white">{p.name}</p>
+              <p className="text-gray-500 text-xs">{p.sub}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

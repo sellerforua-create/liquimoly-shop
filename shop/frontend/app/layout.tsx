@@ -5,10 +5,12 @@ import { ToastProvider } from "../context/ToastContext";
 import Header from "../components/Header";
 import CartDrawer from "../components/CartDrawer";
 import BottomNav from "../components/BottomNav";
+import ExitPopup from "../components/ExitPopup";
 
 export const metadata: Metadata = {
   title: "Liqui Moly UA — Автохімія з доставкою",
   description: "Оригінальна автохімія Liqui Moly. 400+ товарів, доставка Nova Poshta по всій Україні.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <CartDrawer />
             <BottomNav />
+            <ExitPopup />
           </ToastProvider>
         </CartProvider>
       </body>
