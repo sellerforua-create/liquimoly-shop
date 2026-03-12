@@ -9,18 +9,18 @@ import ExitPopup from "../components/ExitPopup";
 
 export const metadata: Metadata = {
   title: "Liqui Moly UA — Автохімія з доставкою",
-  description: "Оригінальна автохімія Liqui Moly. 400+ товарів, доставка Nova Poshta по всій Україні.",
+  description: "Оригінальна автохімія Liqui Moly. 485+ товарів, доставка Nova Poshta по всій Україні.",
   manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="uk">
-      <body className="bg-gray-900 text-white pb-16 md:pb-0">
+      <body className="pb-16 md:pb-0">
         <CartProvider>
           <ToastProvider>
             <Header />
-            {children}
+            <main>{children}</main>
             <CartDrawer />
             <BottomNav />
             <ExitPopup />

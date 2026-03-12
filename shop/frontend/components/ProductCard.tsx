@@ -1,72 +1,65 @@
 "use client";
+import Link from "next/link";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
-import { useState } from "react";
-import Link from "next/link";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image_url?: string;
-  vendor?: string;
-  category_name?: string;
-  available: boolean;
-}
-
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product }: { product: any }) {
   const { addItem, openCart } = useCart();
   const { showToast } = useToast();
-  const [added, setAdded] = useState(false);
+
+  const isHit = product.price > 500;
+  const isNew = product.id % 7 === 0;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     addItem(product);
-    showToast(`✅ ${product.name.slice(0, 30)}... додано до кошика`);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    showToast(`✅ Додано: ${product.name.slice(0, 30)}...`);
+    openCart();
   };
 
-  // Теги
-  const isHit = product.price > 500;
-  const isNew = product.id % 7 === 0;
-
   return (
-    <div className="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-blue-500 transition flex flex-col relative">
-      {/* Теги */}
-      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-        {isHit && <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">🔥 Хіт</span>}
-        {isNew && <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">🆕 Новинка</span>}
-      </div>
-      {/* Наявність */}
-      <div className="absolute top-2 right-2 z-10">
-        {product.available
-          ? <span className="bg-green-700/80 text-green-200 text-xs px-2 py-0.5 rounded-full">✅</span>
-          : <span className="bg-red-800/80 text-red-200 text-xs px-2 py-0.5 rounded-full">❌</span>}
-      </div>
-
-      <Link href={`/catalog/${product.id}`} className="block">
-        <div className="h-48 bg-gray-700 flex items-center justify-center overflow-hidden">
+    <div className="glass product-card shine group flex flex-col overflow-hidden border-glow">
+      <Link href={`/catalog/${product.id}`} className="flex flex-col flex-1">
+        {/* Image */}
+        <div className="relative w-full h-40 flex items-center justify-center bg-white/[0.02] border-b border-white/5">
           {product.image_url
-            ? <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-2 hover:scale-105 transition" />
-            : <span className="text-5xl">🛢️</span>}
+            ? <img src={product.image_url} alt={product.name}
+                className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300" />
+            : <span className="text-5xl opacity-40">🛢️</span>}
+
+          {/* Tags */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isHit && <span className="tag-hot text-white text-[10px] font-bold px-2 py-0.5 rounded-full">🔥 Хіт</span>}
+            {isNew && <span className="tag-new text-white text-[10px] font-bold px-2 py-0.5 rounded-full">🆕 Новинка</span>}
+          </div>
+
+          {/* Availability */}
+          <div className="absolute top-2 right-2">
+            {product.available
+              ? <span className="bg-green-500/20 border border-green-500/40 text-green-400 text-[10px] px-2 py-0.5 rounded-full">✅</span>
+              : <span className="bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] px-2 py-0.5 rounded-full">❌</span>}
+          </div>
         </div>
-        <div className="p-4 flex-1">
-          <p className="text-xs text-blue-400 mb-1">{product.vendor || product.category_name}</p>
-          <h3 className="text-sm font-medium text-white line-clamp-2 mb-2 h-10">{product.name}</h3>
-          <p className="text-lg font-bold text-white">{product.price} ₴</p>
+
+        {/* Info */}
+        <div className="p-3 flex-1 flex flex-col gap-1">
+          <p className="text-slate-500 text-[10px] uppercase tracking-wide">{product.vendor}</p>
+          <h3 className="text-white text-xs font-medium leading-snug line-clamp-3 group-hover:text-blue-300 transition-colors">
+            {product.name}
+          </h3>
+          <div className="mt-auto pt-2">
+            <p className="text-white font-black text-lg">{product.price} <span className="text-slate-400 text-sm font-normal">₴</span></p>
+          </div>
         </div>
       </Link>
-      <div className="px-4 pb-4">
-        {product.available ? (
-          <button onClick={handleAdd}
-            className={`w-full py-2 rounded-lg text-sm font-semibold transition ${added ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}>
-            {added ? "✅ Додано!" : "🛒 До кошика"}
-          </button>
-        ) : (
-          <div className="w-full py-2 rounded-lg text-sm text-center bg-gray-700 text-gray-400">Немає в наявності</div>
-        )}
-      </div>
+
+      {/* Add button */}
+      {product.available && (
+        <button onClick={handleAdd}
+          className="mx-3 mb-3 btn-glow py-2 text-xs text-center w-[calc(100%-24px)]">
+          До кошика
+        </button>
+      )}
     </div>
   );
 }
