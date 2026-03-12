@@ -13,6 +13,7 @@ class Product(Base):
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     price: Mapped[float] = mapped_column(Float)
     old_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    supplier_price: Mapped[float | None] = mapped_column(Float, nullable=True)
     currency: Mapped[str] = mapped_column(String, default="UAH")
     category_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     category_name: Mapped[str | None] = mapped_column(String, index=True, nullable=True)

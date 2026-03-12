@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: liquimoly-backend
+    env: docker
+    dockerfilePath: ./shop/backend/Dockerfile
+    dockerContext: ./shop/backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql+asyncpg://shop@localhost:5432/shop_db
+      - key: PRICE_MARKUP
+        value: "20"
+      - key: PORT
+        value: "8000"
