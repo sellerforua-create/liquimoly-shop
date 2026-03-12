@@ -52,15 +52,14 @@ async def trigger_import():
     async with engine.begin() as conn:
         for (ext_id, name, description, price, supplier_price, category, vendor, image_url, avail) in rows:
             await conn.execute(text("""
-                INSERT INTO products (external_id, name, description, price, supplier_price, category_name, vendor, image_url, available, xml_feed_id)
-                VALUES (:ext_id, :name, :desc, :price, :sprice, :cat, :vendor, :img, :avail, 3411)
+                INSERT INTO products (external_id, name, description, price, category_name, vendor, image_url, available, xml_feed_id)
+                VALUES (:ext_id, :name, :desc, :price, :cat, :vendor, :img, :avail, 3411)
                 ON CONFLICT (external_id) DO UPDATE SET
                     price = EXCLUDED.price,
-                    supplier_price = EXCLUDED.supplier_price,
                     available = EXCLUDED.available
             """), {
                 "ext_id": ext_id, "name": name, "desc": description,
-                "price": price, "sprice": supplier_price, "cat": category,
+                "price": price, "cat": category,
                 "vendor": vendor, "img": image_url, "avail": avail == "true"
             })
 
