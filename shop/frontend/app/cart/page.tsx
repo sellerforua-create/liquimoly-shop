@@ -8,7 +8,7 @@ const PROMOS: Record<string, number> = { LIQUI10: 10, FIRST5: 5, SALE15: 15 };
 
 export default function CartPage() {
   const { items, totalPrice, removeItem, updateQty, clearCart } = useCart();
-  const [form, setForm] = useState({ lastName: "", firstName: "", middleName: "", phone: "" });
+  const [form, setForm] = useState({ lastName: "", firstName: "", middleName: "", phone: "+380" });
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
   const [promoError, setPromoError] = useState("");
@@ -140,13 +140,22 @@ export default function CartPage() {
                 { key: "lastName", placeholder: "Прізвище" },
                 { key: "firstName", placeholder: "Ім'я" },
                 { key: "middleName", placeholder: "По батькові" },
-                { key: "phone", placeholder: "+380XXXXXXXXX" },
               ].map(f => (
                 <input key={f.key} required value={(form as any)[f.key]}
                   onChange={e => setForm({...form, [f.key]: e.target.value})}
                   placeholder={f.placeholder}
                   className="input-dark text-sm" />
               ))}
+              <input required value={form.phone}
+                onChange={e => {
+                  let val = e.target.value;
+                  if (!val.startsWith("+380")) val = "+380";
+                  val = "+380" + val.slice(4).replace(/\D/g, "").slice(0, 9);
+                  setForm({...form, phone: val});
+                }}
+                placeholder="Номер телефону"
+                type="tel"
+                className="input-dark text-sm" />
               <button type="submit" disabled={submitting}
                 className="btn-glow w-full py-3 text-sm">
                 {submitting ? "⏳ Відправляємо..." : "✅ Оформити замовлення"}
