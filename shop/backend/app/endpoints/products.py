@@ -20,7 +20,13 @@ async def get_products(
     if category:
         query = query.where(Product.category_name == category)
     if search:
-        query = query.where(Product.name.ilike(f"%{search}%"))
+        from sqlalchemy import or_
+        query = query.where(or_(
+            Product.name.ilike(f"%{search}%"),
+            Product.description.ilike(f"%{search}%"),
+            Product.vendor_code.ilike(f"%{search}%"),
+            Product.category_name.ilike(f"%{search}%"),
+        ))
     if min_price:
         query = query.where(Product.price >= min_price)
     if max_price:

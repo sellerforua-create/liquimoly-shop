@@ -2,7 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from telegram_bot.services import cart as cart_service
+from services import cart as cart_service
 import httpx, os
 
 router = Router()

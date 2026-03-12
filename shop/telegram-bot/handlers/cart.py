@@ -1,6 +1,6 @@
 from aiogram import Router, F, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from telegram_bot.services import cart as cart_service
+from services import cart as cart_service
 import httpx, os
 
 router = Router()
