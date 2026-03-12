@@ -3,12 +3,15 @@ import { useState } from "react";
 import { useCart } from "../../context/CartContext";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import Link from "next/link";
+import NovaPoshtaPicker from "../../components/NovaPoshtaPicker";
 
 const PROMOS: Record<string, number> = { LIQUI10: 10, FIRST5: 5, SALE15: 15 };
 
 export default function CartPage() {
   const { items, totalPrice, removeItem, updateQty, clearCart } = useCart();
-  const [form, setForm] = useState({ lastName: "", firstName: "", middleName: "", phone: "+380" });
+  const [form, setForm] = useState({ lastName: "", firstName: "", phone: "+380" });
+  const [npCity, setNpCity] = useState("");
+  const [npWarehouse, setNpWarehouse] = useState("");
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
   const [promoError, setPromoError] = useState("");
@@ -32,11 +35,12 @@ export default function CartPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\+?380\d{9}$/.test(form.phone.replace(/\s/g, ""))) return alert("Некоректний номер +380XXXXXXXXX");
+    if (!npCity || !npWarehouse) return alert("Оберіть місто та відділення Нової Пошти");
     setSubmitting(true);
     const BOT_TOKEN = "8644972775:AAHT94GCBd-25eFsmEFLp9Ph1JFnCpfJ7i8";
     const CHAT_ID = "455255915";
     const itemsList = items.map(i => `• ${i.name.slice(0, 40)} x${i.qty} = ${(i.price * i.qty).toFixed(0)}₴`).join("\n");
-    const text = `🛒 НОВЕ ЗАМОВЛЕННЯ з сайту\n\n👤 ${form.lastName} ${form.firstName} ${form.middleName}\n📞 ${form.phone}\n${promoApplied ? `🎁 Промокод: ${promoApplied} (-${discount}%)\n` : ""}\n${itemsList}\n\n💰 Сума: ${finalPrice}₴`;
+    const text = `🛒 НОВЕ ЗАМОВЛЕННЯ з сайту\n\n👤 ${form.lastName} ${form.firstName}\n📞 ${form.phone}\n📦 ${npCity}\n🏤 ${npWarehouse}\n${promoApplied ? `🎁 Промокод: ${promoApplied} (-${discount}%)\n` : ""}\n${itemsList}\n\n💰 Сума: ${finalPrice}₴`;
     try {
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -139,7 +143,6 @@ export default function CartPage() {
               {[
                 { key: "lastName", placeholder: "Прізвище" },
                 { key: "firstName", placeholder: "Ім'я" },
-                { key: "middleName", placeholder: "По батькові" },
               ].map(f => (
                 <input key={f.key} required value={(form as any)[f.key]}
                   onChange={e => setForm({...form, [f.key]: e.target.value})}
@@ -156,8 +159,11 @@ export default function CartPage() {
                 placeholder="Номер телефону"
                 type="tel"
                 className="input-dark text-sm" />
-              <button type="submit" disabled={submitting}
-                className="btn-glow w-full py-3 text-sm">
+
+              <NovaPoshtaPicker onSelect={(city, wh) => { setNpCity(city); setNpWarehouse(wh); }} />
+
+              <button type="submit" disabled={submitting || !npWarehouse}
+                className="btn-glow w-full py-3 text-sm disabled:opacity-50">
                 {submitting ? "⏳ Відправляємо..." : "✅ Оформити замовлення"}
               </button>
             </form>
