@@ -6,7 +6,7 @@ interface CartItem {
   name: string;
   price: number;
   image_url?: string;
-  quantity: number;
+  qty: number;
 }
 
 interface CartContextType {
@@ -15,8 +15,8 @@ interface CartContextType {
   removeItem: (id: number) => void;
   updateQty: (id: number, qty: number) => void;
   clearCart: () => void;
-  total: number;
-  count: number;
+  totalPrice: number;
+  totalCount: number;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -40,24 +40,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = (product: any) => {
     setItems(prev => {
       const existing = prev.find(i => i.id === product.id);
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { id: product.id, name: product.name, price: product.price, image_url: product.image_url, quantity: 1 }];
+      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { id: product.id, name: product.name, price: product.price, image_url: product.image_url, qty: 1 }];
     });
   };
 
   const removeItem = (id: number) => setItems(prev => prev.filter(i => i.id !== id));
   const updateQty = (id: number, qty: number) => {
     if (qty <= 0) return removeItem(id);
-    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i));
+    setItems(prev => prev.map(i => i.id === id ? { ...i, qty } : i));
   };
   const clearCart = () => setItems([]);
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const count = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQty, clearCart, total, count, isOpen, openCart, closeCart }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQty, clearCart, totalPrice, totalCount, isOpen, openCart, closeCart }}>
       {children}
     </CartContext.Provider>
   );
