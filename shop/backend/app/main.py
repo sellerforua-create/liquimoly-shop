@@ -12,6 +12,7 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
         try:
             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier_price FLOAT"))
+            await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_products_external_id_unique ON products (external_id) WHERE external_id IS NOT NULL"))
         except Exception:
             pass
     yield
