@@ -54,8 +54,8 @@ async def trigger_import():
         await conn.execute(text("DELETE FROM products"))
         for (ext_id, name, description, price, category, vendor, image_url, avail) in rows:
             await conn.execute(text("""
-                INSERT INTO products (external_id, name, description, price, category_name, vendor, image_url, available, xml_feed_id)
-                VALUES (:ext_id, :name, :desc, :price, :cat, :vendor, :img, :avail, 3411)
+                INSERT INTO products (external_id, name, description, price, category_name, vendor, image_url, available, xml_feed_id, currency)
+                VALUES (:ext_id, :name, :desc, :price, :cat, :vendor, :img, :avail, 3411, 'UAH')
             """), {
                 "ext_id": ext_id, "name": name, "desc": description,
                 "price": price, "cat": category,
