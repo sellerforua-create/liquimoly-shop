@@ -1,152 +1,157 @@
 "use client";
-import { useCart } from "../../context/CartContext";
 import { useState } from "react";
+import { useCart } from "../../context/CartContext";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const PROMOS: Record<string, number> = { LIQUI10: 10, FIRST5: 5, SALE15: 15 };
 
 export default function CartPage() {
-  const { items, removeItem, updateQty, clearCart, total } = useCart();
-  const [ordering, setOrdering] = useState(false);
+  const { items, totalPrice, removeItem, updateQty, clearCart } = useCart();
   const [form, setForm] = useState({ lastName: "", firstName: "", middleName: "", phone: "" });
+  const [promo, setPromo] = useState("");
+  const [promoApplied, setPromoApplied] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const formatPhone = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 9); // максимум 9 цифр після +380
-    let result = "";
-    if (digits.length > 0) result += digits.slice(0, 3);
-    if (digits.length > 3) result += " " + digits.slice(3, 5);
-    if (digits.length > 5) result += " " + digits.slice(5, 7);
-    if (digits.length > 7) result += " " + digits.slice(7, 9);
-    return result;
+  const discount = promoApplied ? PROMOS[promoApplied] : 0;
+  const finalPrice = Math.round(totalPrice * (1 - discount / 100));
+
+  const applyPromo = () => {
+    const code = promo.trim().toUpperCase();
+    if (PROMOS[code]) {
+      setPromoApplied(code);
+      setPromoError("");
+    } else {
+      setPromoError("Невірний промокод");
+      setPromoApplied(null);
+    }
   };
 
-  const phoneValid = form.phone.replace(/\D/g, "").length === 9;
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^\+?380\d{9}$/.test(form.phone.replace(/\s/g, ""))) return alert("Некоректний номер +380XXXXXXXXX");
+    setSubmitting(true);
+    const BOT_TOKEN = "8644972775:AAHT94GCBd-25eFsmEFLp9Ph1JFnCpfJ7i8";
+    const CHAT_ID = "455255915";
+    const itemsList = items.map(i => `• ${i.name.slice(0, 40)} x${i.qty} = ${(i.price * i.qty).toFixed(0)}₴`).join("\n");
+    const text = `🛒 НОВЕ ЗАМОВЛЕННЯ з сайту\n\n👤 ${form.lastName} ${form.firstName} ${form.middleName}\n📞 ${form.phone}\n${promoApplied ? `🎁 Промокод: ${promoApplied} (-${discount}%)\n` : ""}\n${itemsList}\n\n💰 Сума: ${finalPrice}₴`;
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: CHAT_ID, text }),
+      });
+    } catch {}
+    clearCart();
+    setSuccess(true);
+    setSubmitting(false);
+  };
 
   if (success) return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <div className="text-7xl mb-6 animate-bounce">🎉</div>
-        <h1 className="text-3xl font-bold mb-3">Дякуємо за замовлення!</h1>
-        <p className="text-gray-400 mb-2">Ми отримали ваше замовлення і зв'яжемось найближчим часом для підтвердження.</p>
-        <p className="text-gray-400 mb-8">Доставка Nova Poshta — 1-2 дні по Україні 🚚</p>
-
-        <div className="bg-blue-900 border border-blue-700 rounded-2xl p-6 mb-6">
-          <div className="text-3xl mb-3">✈️</div>
-          <h2 className="text-lg font-bold mb-2">Зручніше замовляти в Telegram!</h2>
-          <p className="text-gray-300 text-sm mb-4">
-            Підпишіться на наш бот — отримуйте акції, нові товари та робіть замовлення прямо в Telegram без зайвих кроків
-          </p>
-          <a href="https://t.me/Liquimolli_bot"
-            target="_blank"
-            className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold px-6 py-3 rounded-xl transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
-            Відкрити @Liquimolli_bot
-          </a>
+    <div className="min-h-[70vh] flex items-center justify-center px-4">
+      <div className="glass p-10 text-center max-w-md w-full">
+        <div className="text-6xl mb-4">🎉</div>
+        <h2 className="text-2xl font-bold text-white mb-3">Замовлення прийнято!</h2>
+        <p className="text-slate-400 mb-2">Ми зв'яжемося з вами найближчим часом</p>
+        <p className="text-slate-500 text-sm mb-6">Або пишіть нам одразу в Telegram</p>
+        <div className="flex flex-col gap-3">
+          <a href="https://t.me/Liquimolli_bot" target="_blank" className="btn-glow py-3 text-sm text-center">✈️ Відкрити бот</a>
+          <Link href="/catalog" className="glass glass-hover py-3 text-sm text-center rounded-xl text-slate-300 font-semibold">Продовжити покупки</Link>
         </div>
-
-        <a href="/catalog" className="text-blue-400 hover:underline text-sm">← Продовжити покупки</a>
       </div>
     </div>
   );
 
   if (items.length === 0) return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+    <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="text-center">
-        <div className="text-6xl mb-4">🛒</div>
-        <h1 className="text-2xl font-bold mb-4">Кошик порожній</h1>
-        <a href="/catalog" className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg">До каталогу</a>
+        <div className="text-7xl mb-4 opacity-20">🛒</div>
+        <h2 className="text-xl font-bold text-white mb-3">Кошик порожній</h2>
+        <Link href="/catalog" className="btn-glow inline-block px-8 py-3 text-sm mt-2">🛍 В каталог</Link>
       </div>
     </div>
   );
 
-  const handleOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      const r = await fetch(`${API_URL}/api/orders/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name: `${form.lastName} ${form.firstName} ${form.middleName}`.trim(),
-          customer_phone: "+380" + form.phone.replace(/\D/g, ""),
-          items: items.map(i => ({ product_id: i.id, product_name: i.name, price: i.price, quantity: i.quantity })),
-        }),
-      });
-      if (r.ok) { clearCart(); setSuccess(true); }
-      else setError("Помилка при оформленні. Спробуйте ще раз.");
-    } catch { setError("Немає зв'язку з сервером."); }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">🛒 Кошик</h1>
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Список товарів */}
-          <div className="space-y-4">
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <Breadcrumbs items={[{ label: "Головна", href: "/" }, { label: "Кошик" }]} />
+        <h1 className="text-2xl font-bold text-white mb-6">Ваш кошик</h1>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Товари */}
+          <div className="md:col-span-2 space-y-3">
             {items.map(item => (
-              <div key={item.id} className="bg-gray-800 rounded-xl p-4 flex gap-4">
-                <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-contain" /> : <span className="text-2xl">🛢️</span>}
+              <div key={item.id} className="glass p-4 flex gap-4">
+                <div className="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center flex-shrink-0">
+                  {item.image_url ? <img src={item.image_url} className="w-full h-full object-contain p-1" alt="" /> : <span className="text-2xl">🛢️</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium line-clamp-2 mb-2">{item.name}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => updateQty(item.id, item.quantity - 1)} className="w-7 h-7 bg-gray-700 rounded text-lg leading-none">−</button>
-                      <span className="w-6 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQty(item.id, item.quantity + 1)} className="w-7 h-7 bg-gray-700 rounded text-lg leading-none">+</button>
-                    </div>
-                    <span className="font-bold">{(item.price * item.quantity).toFixed(0)} ₴</span>
-                    <button onClick={() => removeItem(item.id)} className="text-red-400 hover:text-red-300 text-sm">✕</button>
+                  <Link href={`/catalog/${item.id}`} className="text-white text-sm font-medium line-clamp-2 hover:text-blue-300 transition-colors">{item.name}</Link>
+                  <p className="text-blue-400 font-black mt-1">{(item.price * item.qty).toFixed(0)} ₴</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button onClick={() => updateQty(item.id, item.qty - 1)} className="glass w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white rounded-lg text-sm">−</button>
+                    <span className="text-white text-sm w-5 text-center">{item.qty}</span>
+                    <button onClick={() => updateQty(item.id, item.qty + 1)} className="glass w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white rounded-lg text-sm">+</button>
+                    <button onClick={() => removeItem(item.id)} className="ml-auto text-slate-600 hover:text-red-400 text-sm transition-colors">🗑</button>
                   </div>
                 </div>
               </div>
             ))}
-            <div className="bg-gray-800 rounded-xl p-4 flex justify-between text-xl font-bold">
-              <span>Разом:</span>
-              <span>{total.toFixed(0)} ₴</span>
-            </div>
           </div>
 
-          {/* Форма замовлення */}
-          <div className="bg-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Оформити замовлення</h2>
-            {!ordering ? (
-              <button onClick={() => setOrdering(true)} className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-lg">
-                Оформити замовлення
-              </button>
-            ) : (
-              <form onSubmit={handleOrder} className="space-y-4">
-                <input required placeholder="Прізвище *" value={form.lastName}
-                  onChange={e => setForm({...form, lastName: e.target.value})}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500" />
-                <input required placeholder="Ім'я *" value={form.firstName}
-                  onChange={e => setForm({...form, firstName: e.target.value})}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500" />
-                <input placeholder="По батькові" value={form.middleName}
-                  onChange={e => setForm({...form, middleName: e.target.value})}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500" />
-                <div className="flex">
-                  <span className="bg-gray-600 border border-r-0 border-gray-600 rounded-l-lg px-4 py-3 text-gray-300 font-mono">+380</span>
-                  <input required placeholder="000 00 00" value={form.phone}
-                    onChange={e => setForm({...form, phone: formatPhone(e.target.value)})}
-                    className={`flex-1 bg-gray-700 border rounded-r-lg px-4 py-3 focus:outline-none font-mono tracking-widest ${
-                      form.phone && !phoneValid ? "border-red-500 focus:border-red-500" : "border-gray-600 focus:border-blue-500"
-                    }`} />
+          {/* Підсумок + форма */}
+          <div className="space-y-4">
+            {/* Промокод */}
+            <div className="glass p-4">
+              <p className="text-slate-400 text-xs mb-2 font-medium">🎁 Промокод</p>
+              <div className="flex gap-2">
+                <input value={promo} onChange={e => setPromo(e.target.value.toUpperCase())}
+                  placeholder="LIQUI10"
+                  className="input-dark flex-1 text-xs py-2" />
+                <button onClick={applyPromo} className="btn-glow px-3 py-2 text-xs">OK</button>
+              </div>
+              {promoApplied && <p className="text-green-400 text-xs mt-2">✅ -{discount}% застосовано</p>}
+              {promoError && <p className="text-red-400 text-xs mt-2">❌ {promoError}</p>}
+            </div>
+
+            {/* Сума */}
+            <div className="glass p-4">
+              <div className="flex justify-between text-sm text-slate-400 mb-1">
+                <span>Товарів:</span><span className="text-white">{items.reduce((s,i) => s+i.qty, 0)} шт</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-400">Знижка:</span>
+                  <span className="text-green-400">-{(totalPrice - finalPrice).toFixed(0)} ₴</span>
                 </div>
-                {form.phone && !phoneValid && <p className="text-red-400 text-xs">⚠️ Введіть 9 цифр після +380</p>}
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <button type="submit" disabled={!phoneValid}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed py-4 rounded-xl font-bold text-lg transition">
-                  ✅ Підтвердити замовлення
-                </button>
-                <button type="button" onClick={() => setOrdering(false)} className="w-full bg-gray-700 py-3 rounded-xl text-sm">
-                  Назад
-                </button>
-              </form>
-            )}
+              )}
+              <div className="flex justify-between font-black text-lg mt-2 pt-2 border-t border-white/8">
+                <span className="text-white">Разом:</span>
+                <span className="gradient-text">{finalPrice} ₴</span>
+              </div>
+            </div>
+
+            {/* Форма */}
+            <form onSubmit={handleSubmit} className="glass p-4 space-y-3">
+              <p className="text-white font-semibold text-sm mb-1">📋 Дані для доставки</p>
+              {[
+                { key: "lastName", placeholder: "Прізвище" },
+                { key: "firstName", placeholder: "Ім'я" },
+                { key: "middleName", placeholder: "По батькові" },
+                { key: "phone", placeholder: "+380XXXXXXXXX" },
+              ].map(f => (
+                <input key={f.key} required value={(form as any)[f.key]}
+                  onChange={e => setForm({...form, [f.key]: e.target.value})}
+                  placeholder={f.placeholder}
+                  className="input-dark text-sm" />
+              ))}
+              <button type="submit" disabled={submitting}
+                className="btn-glow w-full py-3 text-sm">
+                {submitting ? "⏳ Відправляємо..." : "✅ Оформити замовлення"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
